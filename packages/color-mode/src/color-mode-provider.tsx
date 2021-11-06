@@ -83,22 +83,51 @@ export function ColorModeProvider(props: ColorModeProviderProps) {
      * reasons, do so after hydration.
      *
      * Priority:
-     * - system color mode
-     * - defined value on <ColorModeScript />, if present
-     * - previously stored value
+     * - if `useSystemColorMode` is true system-color will be used as default - initial
+     * colormode is the fallback if system color mode isn't resolved
+     *
+     * - if `--chakra-ui-color-mode` is defined through e.g. `ColorModeScript` this
+     * will be used
+     *
+     * - if `colorModeManager` = `localStorage` and a value is defined for
+     * `chakra-ui-color-mode` this will be used
+     *
+     * - if `initialColorMode` = `system` system-color will be used as default -
+     * initial colormode is the fallback if system color mode isn't resolved
+     *
+     * - if `initialColorMode` = `'light'|'dark'` the corresponding value will be used
      */
     if (isBrowser && colorModeManager.type === "localStorage") {
-      const mode = useSystemColorMode
-        ? getColorScheme(defaultColorMode)
-        : root.get() ||
-          colorModeManager.get() ||
-          getColorScheme(defaultColorMode)
-
-      if (mode) {
-        rawSetColorMode(mode)
+      const systemColorWithFallback = getColorScheme(defaultColorMode)
+      if (useSystemColorMode) {
+        console.log("use useSystemColorMode", systemColorWithFallback)
+        return rawSetColorMode(systemColorWithFallback)
       }
+      const rootGet = root.get()
+      const colorManagerGet = colorModeManager.get()
+      console.log({
+        root: rootGet,
+        colorModeManager: colorManagerGet,
+        initialColorMode,
+        defaultColorMode,
+        systemColorWithFallback,
+      })
+      if (rootGet) {
+        console.log("use rootGet", rootGet)
+        return rawSetColorMode(rootGet)
+      }
+      if (colorManagerGet) {
+        console.log("use colorManagerGet", colorManagerGet)
+        return rawSetColorMode(colorManagerGet)
+      }
+      if (initialColorMode === "system") {
+        console.log("initialColorMode", colorManagerGet)
+        return rawSetColorMode(systemColorWithFallback)
+      }
+      console.log("useDefaultColorMode")
+      return rawSetColorMode(defaultColorMode)
     }
-  }, [colorModeManager, useSystemColorMode, defaultColorMode])
+  }, [colorModeManager, useSystemColorMode, defaultColorMode, initialColorMode])
 
   React.useEffect(() => {
     const isDark = colorMode === "dark"
@@ -136,14 +165,14 @@ export function ColorModeProvider(props: ColorModeProviderProps) {
   }, [setColorMode, useSystemColorMode, initialColorMode])
 
   // presence of `value` indicates a controlled context
-  const context = React.useMemo(
-    () => ({
+  const context = React.useMemo(() => {
+    console.log("context color mode", value ?? colorMode)
+    return {
       colorMode: (value ?? colorMode) as ColorMode,
       toggleColorMode: value ? noop : toggleColorMode,
       setColorMode: value ? noop : setColorMode,
-    }),
-    [colorMode, setColorMode, toggleColorMode, value],
-  )
+    }
+  }, [colorMode, setColorMode, toggleColorMode, value])
 
   return (
     <ColorModeContext.Provider value={context}>

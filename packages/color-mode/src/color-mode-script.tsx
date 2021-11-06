@@ -1,7 +1,7 @@
 import * as React from "react"
 import { ConfigColorMode } from "./color-mode-provider"
 
-function setScript(initialValue: ConfigColorMode) {
+export function setScript(initialValue: ConfigColorMode) {
   const mql = window.matchMedia("(prefers-color-scheme: dark)")
   const systemPreference = mql.matches ? "dark" : "light"
 
@@ -29,6 +29,7 @@ function setScript(initialValue: ConfigColorMode) {
 
   if (colorMode) {
     const root = document.documentElement
+    console.log("color-mode-script set", colorMode)
     root.style.setProperty("--chakra-ui-color-mode", colorMode)
   }
 }
